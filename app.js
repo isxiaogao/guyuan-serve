@@ -1,22 +1,25 @@
 const express = require('express')
 const cors = require('cors')
+const path = require('path')
+require('dotenv').config()
+
 const productRouter = require('./routes/product')
 const categoryRouter = require('./routes/category')
 const bannerRouter = require('./routes/banner')
+const uploadRouter = require('./routes/upload')
 
 const app = express()
 const PORT = process.env.PORT || 3000
 
-// 中间件
 app.use(cors())
 app.use(express.json())
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
 
-// 路由
 app.use('/api/categories', categoryRouter)
 app.use('/api/products', productRouter)
 app.use('/api/banners', bannerRouter)
+app.use('/api/upload', uploadRouter)
 
-// 健康检查
 app.get('/api/health', (req, res) => {
   res.json({ code: 200, message: '服务运行中', timestamp: Date.now() })
 })

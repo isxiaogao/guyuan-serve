@@ -1,10 +1,14 @@
 const express = require('express')
 const router = express.Router()
-const categories = require('../data/categories')
+const pool = require('../db')
 
-// GET /api/categories - 获取所有分类
-router.get('/', (req, res) => {
-  res.json({ code: 200, data: categories })
+router.get('/', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT id, name FROM categories')
+    res.json({ code: 200, data: rows })
+  } catch (err) {
+    res.json({ code: 500, message: err.message })
+  }
 })
 
 module.exports = router

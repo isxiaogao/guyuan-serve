@@ -1,15 +1,14 @@
 const express = require('express')
 const router = express.Router()
+const pool = require('../db')
 
-const banners = [
-  { id: 1, image: '/images/banner1.png', title: '春季新品' },
-  { id: 2, image: '/images/banner2.png', title: '限时特惠' },
-  { id: 3, image: '/images/banner3.png', title: '明星同款' }
-]
-
-// GET /api/banners - 获取轮播图
-router.get('/', (req, res) => {
-  res.json({ code: 200, data: banners })
+router.get('/', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT id, image, title FROM banners')
+    res.json({ code: 200, data: rows })
+  } catch (err) {
+    res.json({ code: 500, message: err.message })
+  }
 })
 
 module.exports = router
