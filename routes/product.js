@@ -77,11 +77,11 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { name, price, originalPrice, image, tag, category, description, detail, images, size, color } = req.body
+    const { name, price, originalPrice, image, tag, category, description, detail, images, size, color, fabric } = req.body
     const imagesJson = Array.isArray(images) ? JSON.stringify(images) : null
     const [result] = await pool.query(
-      'INSERT INTO products (name, price, original_price, image, tag, category_id, description, detail, images, size, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, price, originalPrice || null, image, tag || '', category, description, detail, imagesJson, size || null, color || null]
+      'INSERT INTO products (name, price, original_price, image, tag, category_id, description, detail, images, size, color, fabric) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [name, price, originalPrice || null, image, tag || '', category, description, detail, imagesJson, size || null, color || null, fabric || null]
     )
     res.json({ code: 200, data: { id: result.insertId } })
   } catch (err) {
