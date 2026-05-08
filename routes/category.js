@@ -1,7 +1,6 @@
 const express = require('express')
 const router = express.Router()
 const pool = require('../db')
-const adminAuth = require('../middleware/auth')
 
 // 获取所有分类
 router.get('/', async (req, res) => {
@@ -15,7 +14,7 @@ router.get('/', async (req, res) => {
 })
 
 // 新增分类
-router.post('/', adminAuth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { name } = req.body
     if (!name || !name.trim()) {
@@ -33,7 +32,7 @@ router.post('/', adminAuth, async (req, res) => {
 })
 
 // 更新分类
-router.put('/:id', adminAuth, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { name } = req.body
     if (!name || !name.trim()) {
@@ -54,7 +53,7 @@ router.put('/:id', adminAuth, async (req, res) => {
 })
 
 // 删除分类
-router.delete('/:id', adminAuth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const [result] = await pool.query('DELETE FROM categories WHERE id = ?', [Number(req.params.id)])
     if (result.affectedRows === 0) {

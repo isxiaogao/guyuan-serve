@@ -59,7 +59,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
 app.use('/api/categories', categoryRouter)
 app.use('/api/products', productRouter)
 app.use('/api/banners', bannerRouter)
-app.use('/api/upload', adminAuth, uploadRouter)
+app.use('/api/upload', uploadRouter)
 
 app.get('/api/health', (req, res) => {
   res.json({ code: 200, message: '服务运行中', timestamp: Date.now() })

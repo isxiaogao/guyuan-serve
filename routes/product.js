@@ -1,7 +1,6 @@
 const express = require('express')
 const router = express.Router()
 const pool = require('../db')
-const adminAuth = require('../middleware/auth')
 
 // 字段映射：数据库字段 -> 小程序字段
 function mapProduct(row) {
@@ -101,8 +100,13 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.post('/', adminAuth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
+    const [{ count }] = await pool.query('SELECT COUNT(*) as count FROM products')
+    if (count >= 500) {
+      return res.json({ code: 400, message: '商品数量已达上限(500条)' })
+    }
+
     const { name, price, originalPrice, image, tag, category, description, detail, images, size, color, fabric } = req.body
 
     if (!name || !name.trim()) {
