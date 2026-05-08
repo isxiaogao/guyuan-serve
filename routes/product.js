@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const pool = require('../db')
+const adminAuth = require('../middleware/auth')
 
 // 字段映射：数据库字段 -> 小程序字段
 function mapProduct(row) {
@@ -33,7 +34,7 @@ function mapList(rows) {
 
 router.get('/', async (req, res) => {
   try {
-    const { category, tag, page = 1, pageSize = 20 } = req.query
+    const { category, tag, keyword, page = 1, pageSize = 20 } = req.query
     let sql = 'SELECT * FROM products WHERE 1=1'
     const params = []
 
@@ -45,15 +46,22 @@ router.get('/', async (req, res) => {
       sql += ' AND tag = ?'
       params.push(tag)
     }
+    if (keyword && typeof keyword === 'string' && keyword.length <= 50) {
+      sql += ' AND name LIKE ?'
+      params.push(`%${keyword}%`)
+    }
+
+    const pageNum = Math.max(1, Math.min(Number(page), 100))
+    const sizeNum = Math.max(1, Math.min(Number(pageSize), 50))
 
     const countSql = sql.replace('SELECT *', 'SELECT COUNT(*) as total')
     const [{ total }] = await pool.query(countSql, params)
 
     sql += ' ORDER BY id LIMIT ? OFFSET ?'
-    params.push(Number(pageSize), (Number(page) - 1) * Number(pageSize))
+    params.push(sizeNum, (pageNum - 1) * sizeNum)
 
     const [rows] = await pool.query(sql, params)
-    res.json({ code: 200, data: { list: mapList(rows), total, page: Number(page), pageSize: Number(pageSize) } })
+    res.json({ code: 200, data: { list: mapList(rows), total, page: pageNum, pageSize: sizeNum } })
   } catch (err) {
     console.error('[products GET]', err.message)
     res.json({ code: 500, message: '服务器内部错误' })
@@ -93,13 +101,27 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-router.post('/', async (req, res) => {
+router.post('/', adminAuth, async (req, res) => {
   try {
     const { name, price, originalPrice, image, tag, category, description, detail, images, size, color, fabric } = req.body
+
+    if (!name || !name.trim()) {
+      return res.json({ code: 400, message: '商品名称不能为空' })
+    }
+    if (name.length > 200) {
+      return res.json({ code: 400, message: '商品名称不能超过200个字符' })
+    }
+    if (price === undefined || price === null || isNaN(Number(price)) || Number(price) < 0) {
+      return res.json({ code: 400, message: '价格无效' })
+    }
+    if (description && description.length > 2000) {
+      return res.json({ code: 400, message: '描述不能超过2000个字符' })
+    }
+
     const imagesJson = Array.isArray(images) ? JSON.stringify(images) : null
     const [result] = await pool.query(
       'INSERT INTO products (name, price, original_price, image, tag, category_id, description, detail, images, size, color, fabric) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [name, price, originalPrice || null, image, tag || '', category, description, detail, imagesJson, size || null, color || null, fabric || null]
+      [name.trim(), Number(price), originalPrice ? Number(originalPrice) : null, image, tag || '', category, description, detail, imagesJson, size || null, color || null, fabric || null]
     )
     res.json({ code: 200, data: { id: result.insertId } })
   } catch (err) {

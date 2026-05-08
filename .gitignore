@@ -14,7 +14,8 @@ uploads/
 
 dist-ssr
 *.local
-
+.agents/
+skills-lock.json
 # Editor directories and files
 .vscode/*
 .claude/*

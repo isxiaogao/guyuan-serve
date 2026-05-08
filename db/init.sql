@@ -1,7 +1,8 @@
 -- 分类表
 CREATE TABLE IF NOT EXISTS `categories` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
-  `name` VARCHAR(50) NOT NULL
+  `name` VARCHAR(50) NOT NULL,
+  `icon` VARCHAR(100) DEFAULT NULL COMMENT '图标文件名'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 商品表

@@ -1,11 +1,12 @@
 const express = require('express')
 const router = express.Router()
 const pool = require('../db')
+const adminAuth = require('../middleware/auth')
 
 // 获取所有分类
 router.get('/', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT id, name FROM categories ORDER BY id')
+    const [rows] = await pool.query('SELECT id, name, icon FROM categories ORDER BY id')
     res.json({ code: 200, data: rows })
   } catch (err) {
     console.error('[categories GET]', err.message)
@@ -14,13 +15,16 @@ router.get('/', async (req, res) => {
 })
 
 // 新增分类
-router.post('/', async (req, res) => {
+router.post('/', adminAuth, async (req, res) => {
   try {
     const { name } = req.body
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.json({ code: 400, message: '分类名称不能为空' })
     }
-    const [result] = await pool.query('INSERT INTO categories (name) VALUES (?)', [name])
+    if (name.length > 50) {
+      return res.json({ code: 400, message: '分类名称不能超过50个字符' })
+    }
+    const [result] = await pool.query('INSERT INTO categories (name) VALUES (?)', [name.trim()])
     res.json({ code: 200, data: { id: result.insertId } })
   } catch (err) {
     console.error('[categories POST]', err.message)
@@ -29,13 +33,16 @@ router.post('/', async (req, res) => {
 })
 
 // 更新分类
-router.put('/:id', async (req, res) => {
+router.put('/:id', adminAuth, async (req, res) => {
   try {
     const { name } = req.body
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.json({ code: 400, message: '分类名称不能为空' })
     }
-    const [result] = await pool.query('UPDATE categories SET name = ? WHERE id = ?', [name, Number(req.params.id)])
+    if (name.length > 50) {
+      return res.json({ code: 400, message: '分类名称不能超过50个字符' })
+    }
+    const [result] = await pool.query('UPDATE categories SET name = ? WHERE id = ?', [name.trim(), Number(req.params.id)])
     if (result.affectedRows === 0) {
       return res.json({ code: 404, message: '分类不存在' })
     }
@@ -47,7 +54,7 @@ router.put('/:id', async (req, res) => {
 })
 
 // 删除分类
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', adminAuth, async (req, res) => {
   try {
     const [result] = await pool.query('DELETE FROM categories WHERE id = ?', [Number(req.params.id)])
     if (result.affectedRows === 0) {
