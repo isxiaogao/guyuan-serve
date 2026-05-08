@@ -5,11 +5,25 @@ const pool = require('../db')
 // 字段映射：数据库字段 -> 小程序字段
 function mapProduct(row) {
   if (!row) return null
+  try {
+    row.images = typeof row.images === 'string' ? JSON.parse(row.images) : row.images
+  } catch (e) {
+    row.images = []
+  }
   return {
-    ...row,
-    category: row.category_id,
+    id: row.id,
+    name: row.name,
+    price: row.price,
     originalPrice: row.original_price,
-    images: typeof row.images === 'string' ? JSON.parse(row.images) : row.images
+    image: row.image,
+    tag: row.tag,
+    category: row.category_id,
+    description: row.description,
+    detail: row.detail,
+    images: row.images,
+    size: row.size,
+    color: row.color,
+    fabric: row.fabric
   }
 }
 
@@ -41,37 +55,41 @@ router.get('/', async (req, res) => {
     const [rows] = await pool.query(sql, params)
     res.json({ code: 200, data: { list: mapList(rows), total, page: Number(page), pageSize: Number(pageSize) } })
   } catch (err) {
-    res.json({ code: 500, message: err.message })
+    console.error('[products GET]', err.message)
+    res.json({ code: 500, message: '服务器内部错误' })
   }
 })
 
 router.get('/hot', async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM products WHERE tag = '热卖'")
+    const [rows] = await pool.query('SELECT * FROM products WHERE tag = ?', ['热卖'])
     res.json({ code: 200, data: mapList(rows) })
   } catch (err) {
-    res.json({ code: 500, message: err.message })
+    console.error('[products/hot GET]', err.message)
+    res.json({ code: 500, message: '服务器内部错误' })
   }
 })
 
 router.get('/new', async (req, res) => {
   try {
-    const [rows] = await pool.query("SELECT * FROM products WHERE tag IN ('新品', '上新')")
+    const [rows] = await pool.query('SELECT * FROM products WHERE tag IN (?, ?)', ['新品', '上新'])
     res.json({ code: 200, data: mapList(rows) })
   } catch (err) {
-    res.json({ code: 500, message: err.message })
+    console.error('[products/new GET]', err.message)
+    res.json({ code: 500, message: '服务器内部错误' })
   }
 })
 
 router.get('/:id', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id])
+    const [rows] = await pool.query('SELECT * FROM products WHERE id = ?', [Number(req.params.id)])
     if (rows.length === 0) {
       return res.json({ code: 404, message: '商品不存在' })
     }
     res.json({ code: 200, data: mapProduct(rows[0]) })
   } catch (err) {
-    res.json({ code: 500, message: err.message })
+    console.error('[products/:id GET]', err.message)
+    res.json({ code: 500, message: '服务器内部错误' })
   }
 })
 
@@ -85,7 +103,8 @@ router.post('/', async (req, res) => {
     )
     res.json({ code: 200, data: { id: result.insertId } })
   } catch (err) {
-    res.json({ code: 500, message: err.message })
+    console.error('[products POST]', err.message)
+    res.json({ code: 500, message: '服务器内部错误' })
   }
 })
 
