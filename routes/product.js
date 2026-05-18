@@ -69,7 +69,13 @@ router.get('/', async (req, res) => {
 
 router.get('/hot', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM products WHERE tag = ?', ['热卖'])
+    const [tags] = await pool.query('SELECT name FROM tags WHERE code = ? AND enabled = 1', ['hot'])
+    if (tags.length === 0) {
+      return res.json({ code: 200, data: [] })
+    }
+    const names = tags.map(t => t.name)
+    const placeholders = names.map(() => '?').join(',')
+    const [rows] = await pool.query(`SELECT * FROM products WHERE tag IN (${placeholders})`, names)
     res.json({ code: 200, data: mapList(rows) })
   } catch (err) {
     console.error('[products/hot GET]', err.message)
@@ -79,7 +85,13 @@ router.get('/hot', async (req, res) => {
 
 router.get('/new', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM products WHERE tag IN (?, ?)', ['新品', '上新'])
+    const [tags] = await pool.query('SELECT name FROM tags WHERE code = ? AND enabled = 1', ['new'])
+    if (tags.length === 0) {
+      return res.json({ code: 200, data: [] })
+    }
+    const names = tags.map(t => t.name)
+    const placeholders = names.map(() => '?').join(',')
+    const [rows] = await pool.query(`SELECT * FROM products WHERE tag IN (${placeholders})`, names)
     res.json({ code: 200, data: mapList(rows) })
   } catch (err) {
     console.error('[products/new GET]', err.message)

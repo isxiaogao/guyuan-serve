@@ -25,6 +25,24 @@ CREATE TABLE IF NOT EXISTS `products` (
   INDEX `idx_tag` (`tag`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 标签字典表
+CREATE TABLE IF NOT EXISTS `tags` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(50) NOT NULL COMMENT '标签显示名称，如"热卖"',
+  `code` VARCHAR(50) NOT NULL COMMENT '标签代码，如 hot/new/featured',
+  `sort` INT DEFAULT 0 COMMENT '排序，越小越靠前',
+  `enabled` TINYINT(1) DEFAULT 1 COMMENT '是否启用',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_name` (`name`),
+  INDEX `idx_enabled_code` (`enabled`, `code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 初始标签数据
+INSERT IGNORE INTO `tags` (`name`, `code`, `sort`) VALUES
+  ('热卖', 'hot', 1),
+  ('新品', 'new', 2),
+  ('上新', 'new', 3);
+
 -- 轮播图表
 CREATE TABLE IF NOT EXISTS `banners` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
