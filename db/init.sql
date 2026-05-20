@@ -49,3 +49,24 @@ CREATE TABLE IF NOT EXISTS `banners` (
   `image` VARCHAR(500) NOT NULL,
   `title` VARCHAR(100) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 收藏表
+CREATE TABLE IF NOT EXISTS `favorites` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_openid` VARCHAR(100) NOT NULL,
+  `product_id` INT NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uk_user_product` (`user_openid`, `product_id`),
+  INDEX `idx_user_openid` (`user_openid`),
+  INDEX `idx_product_id` (`product_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 用户表
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `openid` VARCHAR(100) NOT NULL UNIQUE,
+  `is_admin` TINYINT(1) DEFAULT 0,
+  `first_visit_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `last_visit_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_is_admin` (`is_admin`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

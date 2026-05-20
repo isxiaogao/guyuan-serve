@@ -146,4 +146,36 @@ router.post('/', async (req, res) => {
   }
 })
 
+router.put('/:id', async (req, res) => {
+  try {
+    const { name, price, originalPrice, image, tag, category, description, detail, images, size, color, fabric } = req.body
+
+    if (!name || !name.trim()) {
+      return res.json({ code: 400, message: '商品名称不能为空' })
+    }
+    if (name.length > 200) {
+      return res.json({ code: 400, message: '商品名称不能超过200个字符' })
+    }
+    if (price === undefined || price === null || isNaN(Number(price)) || Number(price) < 0) {
+      return res.json({ code: 400, message: '价格无效' })
+    }
+    if (description && description.length > 2000) {
+      return res.json({ code: 400, message: '描述不能超过2000个字符' })
+    }
+
+    const imagesJson = Array.isArray(images) ? JSON.stringify(images) : null
+    const [result] = await pool.query(
+      'UPDATE products SET name=?, price=?, original_price=?, image=?, tag=?, category_id=?, description=?, detail=?, images=?, size=?, color=?, fabric=? WHERE id=?',
+      [name.trim(), Number(price), originalPrice ? Number(originalPrice) : null, image, tag || '', category, description, detail, imagesJson, size || null, color || null, fabric || null, Number(req.params.id)]
+    )
+    if (result.affectedRows === 0) {
+      return res.json({ code: 404, message: '商品不存在' })
+    }
+    res.json({ code: 200, message: '更新成功' })
+  } catch (err) {
+    console.error('[products PUT]', err.message)
+    res.json({ code: 500, message: '服务器内部错误' })
+  }
+})
+
 module.exports = router

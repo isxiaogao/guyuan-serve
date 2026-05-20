@@ -9,6 +9,8 @@ const categoryRouter = require('./routes/category')
 const bannerRouter = require('./routes/banner')
 const uploadRouter = require('./routes/upload')
 const tagRouter = require('./routes/tag')
+const authRouter = require('./routes/auth')
+const favoriteRouter = require('./routes/favorite')
 
 const app = express()
 const PORT = process.env.PORT || 8080
@@ -62,6 +64,8 @@ app.use('/api/products', productRouter)
 app.use('/api/banners', bannerRouter)
 app.use('/api/upload', uploadRouter)
 app.use('/api/tags', tagRouter)
+app.use('/api/auth', authRouter)
+app.use('/api/favorites', favoriteRouter)
 
 app.get('/api/health', (req, res) => {
   res.json({ code: 200, message: '服务运行中', timestamp: Date.now() })
