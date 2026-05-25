@@ -15,7 +15,7 @@ function asyncHandler(fn) {
 function errorHandler(err, req, res, next) {
   const method = req.method
   const url = req.originalUrl || req.url
-  console.error(`[ERROR] ${method} ${url}`, err.message)
+  console.error(`[ERROR] ${method} ${url}`, err.message, err.code || '', err.stack || '')
 
   if (err instanceof AppError) {
     return res.json({ code: err.code, message: err.message })
