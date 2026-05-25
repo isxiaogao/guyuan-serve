@@ -3,7 +3,7 @@ const router = express.Router()
 const pool = require('../db')
 const { asyncHandler } = require('../middleware/errorHandler')
 const openidAuth = require('../middleware/openidAuth')
-const { extractFilename, incrementRef, decrementRef } = require('../utils/resourceManager')
+const { extractFilename, incrementRef, deleteUnreferencedFiles } = require('../utils/resourceManager')
 
 router.get('/', asyncHandler(async (req, res) => {
   const [rows] = await pool.query('SELECT id, image, title FROM banners ORDER BY id DESC')
@@ -39,9 +39,9 @@ router.delete('/:id', openidAuth({ adminOnly: true }), asyncHandler(async (req, 
     return res.json({ code: 404, message: '轮播图不存在' })
   }
 
-  // 递减引用计数，不再直接删文件，由 resources 表统一管理
+  // 递减引用并删除无引用的文件
   const fn = extractFilename(rows[0].image)
-  if (fn) await decrementRef(fn)
+  if (fn) await deleteUnreferencedFiles([fn])
 
   await pool.query('DELETE FROM banners WHERE id = ?', [Number(req.params.id)])
   res.json({ code: 200, message: '删除成功' })

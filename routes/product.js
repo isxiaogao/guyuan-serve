@@ -4,7 +4,7 @@ const pool = require('../db')
 const { asyncHandler } = require('../middleware/errorHandler')
 const openidAuth = require('../middleware/openidAuth')
 const { mapProduct, mapList } = require('../utils/productMapper')
-const { extractFilename, incrementRefs, decrementRefs } = require('../utils/resourceManager')
+const { extractFilename, incrementRefs, decrementRefs, deleteUnreferencedFiles } = require('../utils/resourceManager')
 
 router.get('/', asyncHandler(async (req, res) => {
   const { category, tag, keyword, page = 1, pageSize = 20 } = req.query
@@ -180,9 +180,9 @@ router.delete('/:id', openidAuth({ adminOnly: true }), asyncHandler(async (req, 
     return res.json({ code: 404, message: '商品不存在' })
   }
 
-  // 递减引用计数
+  // 递减引用并删除无引用的文件
   const files = collectProductFiles(rows[0])
-  await decrementRefs(files)
+  await deleteUnreferencedFiles(files)
 
   await pool.query('DELETE FROM products WHERE id = ?', [Number(req.params.id)])
   res.json({ code: 200, message: '删除成功' })

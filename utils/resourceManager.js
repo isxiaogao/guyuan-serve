@@ -91,12 +91,46 @@ async function cleanupOrphans() {
   return { deletedFiles, count: deletedFiles.length }
 }
 
+/**
+ * 递减引用并删除无引用的文件
+ * 返回已删除的文件名列表
+ */
+async function deleteUnreferencedFiles(filenames) {
+  if (!Array.isArray(filenames) || filenames.length === 0) return []
+
+  const deletedFiles = []
+  for (const filename of filenames) {
+    // 先递减引用计数
+    await pool.query(
+      'UPDATE resources SET ref_count = GREATEST(ref_count - 1, 0) WHERE filename = ?',
+      [filename]
+    )
+    // 查询当前引用计数
+    const [rows] = await pool.query('SELECT ref_count FROM resources WHERE filename = ?', [filename])
+    // 如果引用计数 <= 0，删除物理文件和记录
+    if (rows.length > 0 && rows[0].ref_count <= 0) {
+      const filePath = path.join(UPLOAD_DIR, filename)
+      try {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath)
+        }
+      } catch (err) {
+        console.error(`[删除文件失败] ${filename}:`, err.message)
+      }
+      await pool.query('DELETE FROM resources WHERE filename = ?', [filename])
+      deletedFiles.push(filename)
+    }
+  }
+  return deletedFiles
+}
+
 module.exports = {
   registerFile,
   incrementRef,
   decrementRef,
   incrementRefs,
   decrementRefs,
+  deleteUnreferencedFiles,
   extractFilename,
   cleanupOrphans
 }
