@@ -100,15 +100,18 @@ async function deleteUnreferencedFiles(filenames) {
 
   const deletedFiles = []
   for (const filename of filenames) {
-    // 先递减引用计数
+    // 先递减引用计数（如果存在于 resources 表）
     await pool.query(
       'UPDATE resources SET ref_count = GREATEST(ref_count - 1, 0) WHERE filename = ?',
       [filename]
     )
     // 查询当前引用计数
     const [rows] = await pool.query('SELECT ref_count FROM resources WHERE filename = ?', [filename])
-    // 如果引用计数 <= 0，删除物理文件和记录
-    if (rows.length > 0 && rows[0].ref_count <= 0) {
+    // 判断是否应该删除物理文件：
+    // 1. 文件不在 resources 表中（旧文件或登记失败）→ 直接删除
+    // 2. 文件在 resources 表中且 ref_count <= 0 → 删除
+    const shouldDelete = rows.length === 0 || rows[0].ref_count <= 0
+    if (shouldDelete) {
       const filePath = path.join(UPLOAD_DIR, filename)
       try {
         if (fs.existsSync(filePath)) {
@@ -117,7 +120,10 @@ async function deleteUnreferencedFiles(filenames) {
       } catch (err) {
         console.error(`[删除文件失败] ${filename}:`, err.message)
       }
-      await pool.query('DELETE FROM resources WHERE filename = ?', [filename])
+      // 如果在 resources 表中有记录，也删除记录
+      if (rows.length > 0) {
+        await pool.query('DELETE FROM resources WHERE filename = ?', [filename])
+      }
       deletedFiles.push(filename)
     }
   }

@@ -21,7 +21,7 @@ router.post('/', openidAuth({ adminOnly: true }), asyncHandler(async (req, res) 
   res.json({ code: 200, data: { id: result.insertId } })
 }))
 
-router.put('/:id', asyncHandler(async (req, res) => {
+router.put('/:id', openidAuth({ adminOnly: true }), asyncHandler(async (req, res) => {
   const { name } = req.body
   if (!name || !name.trim()) {
     return res.json({ code: 400, message: '分类名称不能为空' })

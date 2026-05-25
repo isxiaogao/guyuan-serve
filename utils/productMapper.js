@@ -24,6 +24,7 @@ function mapProduct(row) {
     description: row.description,
     detail: row.detail,
     images: row.images,
+    video: row.video,
     size: row.size,
     color: row.color,
     fabric: row.fabric

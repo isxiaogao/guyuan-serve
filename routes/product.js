@@ -80,6 +80,10 @@ function collectProductFiles(row) {
       }
     }
   }
+  if (row.video) {
+    const fn = extractFilename(row.video)
+    if (fn) files.push(fn)
+  }
   return files
 }
 
@@ -89,7 +93,7 @@ router.post('/', openidAuth({ adminOnly: true }), asyncHandler(async (req, res) 
     return res.json({ code: 400, message: '商品数量已达上限(500条)' })
   }
 
-  const { name, price, originalPrice, image, tag, category, description, detail, images, size, color, fabric } = req.body
+  const { name, price, originalPrice, image, tag, category, description, detail, images, video, size, color, fabric } = req.body
 
   if (!name || !name.trim()) {
     return res.json({ code: 400, message: '商品名称不能为空' })
@@ -118,17 +122,21 @@ router.post('/', openidAuth({ adminOnly: true }), asyncHandler(async (req, res) 
       if (fn) files.push(fn)
     }
   }
+  if (video) {
+    const fn = extractFilename(video)
+    if (fn) files.push(fn)
+  }
   await incrementRefs(files)
 
   const [result] = await pool.query(
-    'INSERT INTO products (name, price, original_price, image, tag, category_id, description, detail, images, size, color, fabric) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [name.trim(), Number(price), originalPrice ? Number(originalPrice) : null, image, tag || '', category, description, detail, imagesJson, size || null, color || null, fabric || null]
+    'INSERT INTO products (name, price, original_price, image, tag, category_id, description, detail, images, video, size, color, fabric) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [name.trim(), Number(price), originalPrice ? Number(originalPrice) : null, image, tag || '', category, description, detail, imagesJson, video || null, size || null, color || null, fabric || null]
   )
   res.json({ code: 200, data: { id: result.insertId } })
 }))
 
 router.put('/:id', openidAuth({ adminOnly: true }), asyncHandler(async (req, res) => {
-  const { name, price, originalPrice, image, tag, category, description, detail, images, size, color, fabric } = req.body
+  const { name, price, originalPrice, image, tag, category, description, detail, images, video, size, color, fabric } = req.body
 
   if (!name || !name.trim()) {
     return res.json({ code: 400, message: '商品名称不能为空' })
@@ -144,7 +152,7 @@ router.put('/:id', openidAuth({ adminOnly: true }), asyncHandler(async (req, res
   }
 
   // 查出旧记录，递减旧文件引用
-  const [oldRows] = await pool.query('SELECT image, images FROM products WHERE id = ?', [Number(req.params.id)])
+  const [oldRows] = await pool.query('SELECT image, images, video FROM products WHERE id = ?', [Number(req.params.id)])
   if (oldRows.length === 0) {
     return res.json({ code: 404, message: '商品不存在' })
   }
@@ -165,17 +173,21 @@ router.put('/:id', openidAuth({ adminOnly: true }), asyncHandler(async (req, res
       if (fn) newFiles.push(fn)
     }
   }
+  if (video) {
+    const fn = extractFilename(video)
+    if (fn) newFiles.push(fn)
+  }
   await incrementRefs(newFiles)
 
   const [result] = await pool.query(
-    'UPDATE products SET name=?, price=?, original_price=?, image=?, tag=?, category_id=?, description=?, detail=?, images=?, size=?, color=?, fabric=? WHERE id=?',
-    [name.trim(), Number(price), originalPrice ? Number(originalPrice) : null, image, tag || '', category, description, detail, imagesJson, size || null, color || null, fabric || null, Number(req.params.id)]
+    'UPDATE products SET name=?, price=?, original_price=?, image=?, tag=?, category_id=?, description=?, detail=?, images=?, video=?, size=?, color=?, fabric=? WHERE id=?',
+    [name.trim(), Number(price), originalPrice ? Number(originalPrice) : null, image, tag || '', category, description, detail, imagesJson, video || null, size || null, color || null, fabric || null, Number(req.params.id)]
   )
   res.json({ code: 200, message: '更新成功' })
 }))
 
 router.delete('/:id', openidAuth({ adminOnly: true }), asyncHandler(async (req, res) => {
-  const [rows] = await pool.query('SELECT image, images FROM products WHERE id = ?', [Number(req.params.id)])
+  const [rows] = await pool.query('SELECT image, images, video FROM products WHERE id = ?', [Number(req.params.id)])
   if (rows.length === 0) {
     return res.json({ code: 404, message: '商品不存在' })
   }
