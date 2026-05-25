@@ -1,10 +1,9 @@
 const express = require('express')
 const router = express.Router()
 const pool = require('../db')
-const path = require('path')
-const fs = require('fs')
 const { asyncHandler } = require('../middleware/errorHandler')
 const openidAuth = require('../middleware/openidAuth')
+const { extractFilename, incrementRef, decrementRef } = require('../utils/resourceManager')
 
 router.get('/', asyncHandler(async (req, res) => {
   const [rows] = await pool.query('SELECT id, image, title FROM banners ORDER BY id DESC')
@@ -22,6 +21,11 @@ router.post('/', openidAuth({ adminOnly: true }), asyncHandler(async (req, res) 
   if (title.length > 100) {
     return res.json({ code: 400, message: '标题不能超过100个字符' })
   }
+
+  // 增加引用计数
+  const fn = extractFilename(image)
+  if (fn) await incrementRef(fn)
+
   const [result] = await pool.query(
     'INSERT INTO banners (image, title) VALUES (?, ?)',
     [image.trim(), title.trim()]
@@ -34,16 +38,11 @@ router.delete('/:id', openidAuth({ adminOnly: true }), asyncHandler(async (req, 
   if (rows.length === 0) {
     return res.json({ code: 404, message: '轮播图不存在' })
   }
-  const imagePath = rows[0].image
-  if (imagePath) {
-    const match = imagePath.match(/\/uploads\/(.+)$/)
-    if (match) {
-      const filePath = path.join(__dirname, '..', 'uploads', match[1])
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath)
-      }
-    }
-  }
+
+  // 递减引用计数，不再直接删文件，由 resources 表统一管理
+  const fn = extractFilename(rows[0].image)
+  if (fn) await decrementRef(fn)
+
   await pool.query('DELETE FROM banners WHERE id = ?', [Number(req.params.id)])
   res.json({ code: 200, message: '删除成功' })
 }))

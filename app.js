@@ -3,6 +3,7 @@ const cors = require('cors')
 const path = require('path')
 const rateLimit = require('express-rate-limit')
 const { errorHandler } = require('./middleware/errorHandler')
+const { migrateExistingResources } = require('./db/migrateResources')
 require('dotenv').config()
 
 const productRouter = require('./routes/product')
@@ -12,6 +13,7 @@ const uploadRouter = require('./routes/upload')
 const tagRouter = require('./routes/tag')
 const authRouter = require('./routes/auth')
 const favoriteRouter = require('./routes/favorite')
+const resourceRouter = require('./routes/resource')
 
 const app = express()
 const PORT = process.env.PORT || 8080
@@ -67,6 +69,7 @@ app.use('/api/upload', uploadRouter)
 app.use('/api/tags', tagRouter)
 app.use('/api/auth', authRouter)
 app.use('/api/favorites', favoriteRouter)
+app.use('/api/resources', resourceRouter)
 
 app.get('/api/health', (req, res) => {
   res.json({ code: 200, message: '服务运行中', timestamp: Date.now() })
@@ -77,4 +80,6 @@ app.use(errorHandler)
 
 app.listen(PORT, () => {
   console.log(`故媛后端服务已启动: http://localhost:${PORT}`)
+  // 首次部署时补录已有文件
+  migrateExistingResources()
 })
