@@ -74,7 +74,8 @@ router.post('/', openidAuth({ adminOnly: true }), (req, res) => {
       return res.json({ code: 400, message: '请选择文件' })
     }
 
-    const fileType = req.query.type === 'video' ? 'video' : 'image'
+    const ext = path.extname(req.file.filename).toLowerCase()
+    const fileType = getFileType(ext)
     const maxSize = fileType === 'video' ? 200 * 1024 * 1024 : 5 * 1024 * 1024
     if (req.file.size > maxSize) {
       fs.unlinkSync(req.file.path)
@@ -82,7 +83,6 @@ router.post('/', openidAuth({ adminOnly: true }), (req, res) => {
       return res.json({ code: 400, message: `${label}大小不能超过 ${maxSize / 1024 / 1024}MB` })
     }
 
-    const ext = path.extname(req.file.filename).toLowerCase()
     const mimeType = fileType === 'video' ? VIDEO_MIME_MAP[ext] : IMAGE_MIME_MAP[ext]
 
     // 登记到 resources 表
