@@ -129,7 +129,7 @@ router.post('/', openidAuth({ adminOnly: true }), asyncHandler(async (req, res) 
   await incrementRefs(files)
 
   const [result] = await pool.query(
-    'INSERT INTO products (name, price, original_price, image, tag, category_id, description, detail, images, video, size, color, fabric) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO products (name, price, original_price, image, tag, category_id, description, detail, images, video, size, color, fabric) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     [name.trim(), Number(price), originalPrice ? Number(originalPrice) : null, image, tag || '', category, description, detail, imagesJson, video || null, size || null, color || null, fabric || null]
   )
   res.json({ code: 200, data: { id: result.insertId } })
